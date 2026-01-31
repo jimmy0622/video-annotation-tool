@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Transcript Annotation Tool - Step 2</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f7f6; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .info-section { margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+        .info-header { background: #607d8b; color: white; padding: 10px 15px; font-weight: bold; }
+        .info-content { padding: 15px; background: #fff; font-size: 0.9em; line-height: 1.6; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; overflow: hidden; }
+        th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+        
+        tr.skip-row { background-color: #eeeeee !important; color: #aaaaaa; }
+        
+        select { width: 100%; padding: 5px; border-radius: 4px; cursor: pointer; }
+        select:disabled { cursor: not-allowed; opacity: 0.6; }
+
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        .btn { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; color: white; font-weight: bold; transition: 0.2s; }
+        .btn-upload { background-color: #2196F3; }
+        .btn-download { background-color: #f44336; }
+        .btn-same { background-color: #ff9800; font-size: 12px; white-space: nowrap; }
+        
+        .col-id { width: 40px; }
+        .col-text { width: 35%; }
+        .col-info { width: 120px; }
+        .col-select { width: 180px; }
+        .col-action { width: 80px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Transcript 標註系統 - Step 2 (Artifact/Process)</h2>
+
+    <div class="info-section">
+        <div class="info-header">📌 Step 2 標註說明</div>
+        <div class="info-content">
+            1. 本階段僅需標註 <b>Method, Supplementary, Description, Conclusion</b> 四大類別。<br>
+            2. 標註選項包含：<b>ARTEFACT</b> (物品/工具) 或 <b>PROCESS</b> (過程/動作)。<br>
+            3. 灰色列為非目標類別，已自動鎖定。
+        </div>
+    </div>
+    
+    <div class="controls">
+        <input type="file" id="upload" accept=".xlsx, .xls" style="display:none">
+        <button class="btn btn-upload" onclick="document.getElementById('upload').click()">讀取 Step 1 已標註檔案</button>
+        <button class="btn btn-download" onclick="exportToExcel()">匯出 Step 2 結果 (.xlsx)</button>
+        <span id="fileNameDisplay" style="color: #666;">尚未讀取檔案</span>
+    </div>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th class="col-id">ID</th>
+                <th class="col-text">Text</th>
+                <th class="col-info">Category</th>
+                <th class="col-info">Type</th>
+                <th class="col-select">Artifact / Process</th>
+                <th class="col-action">快捷</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+let tableData = [];
+const targetCategories = ["Method", "Supplementary", "Description", "Conclusion"];
+
+document.getElementById('upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('fileNameDisplay').innerText = file.name;
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        tableData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        renderTable();
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    tableData.forEach((row, index) => {
+        const isTarget = targetCategories.includes(row.Category);
+        const tr = document.createElement('tr');
+        if (!isTarget) tr.className = 'skip-row';
+
+        tr.innerHTML = `
+            <td>${row.id || index + 1}</td>
+            <td>${row.text || ''}</td>
+            <td>${row.Category || ''}</td>
+            <td>${row.Type || ''}</td>
+        `;
+
+        const tdTarget = document.createElement('td');
+        const selectAP = document.createElement('select');
+        selectAP.id = `ap-${index}`;
+        
+        if (!isTarget) {
+            selectAP.disabled = true;
+            selectAP.innerHTML = '<option value="">-</option>';
+        } else {
+            selectAP.innerHTML = `
+                <option value="">請選擇</option>
+                <option value="ARTEFACT" ${row.Artifact_Process === 'ARTEFACT' ? 'selected' : ''}>ARTEFACT</option>
+                <option value="PROCESS" ${row.Artifact_Process === 'PROCESS' ? 'selected' : ''}>PROCESS</option>
+            `;
+            selectAP.onchange = (e) => {
+                row.Artifact_Process = e.target.value;
+            };
+        }
+        tdTarget.appendChild(selectAP);
+
+        const tdAction = document.createElement('td');
+        if (isTarget && index > 0) {
+            const btnSame = document.createElement('button');
+            btnSame.className = "btn btn-same";
+            btnSame.innerText = "↑ 同上";
+            btnSame.onclick = () => {
+                let prevVal = "";
+                for(let i = index - 1; i >= 0; i--) {
+                    if(tableData[i].Artifact_Process) {
+                        prevVal = tableData[i].Artifact_Process;
+                        break;
+                    }
+                }
+                if(prevVal) {
+                    row.Artifact_Process = prevVal;
+                    selectAP.value = prevVal;
+                }
+            };
+            tdAction.appendChild(btnSame);
+        }
+
+        tr.appendChild(tdTarget);
+        tr.appendChild(tdAction);
+        tbody.appendChild(tr);
+    });
+}
+
+function exportToExcel() {
+    if (tableData.length === 0) return alert("沒有資料");
+    const ws = XLSX.utils.json_to_sheet(tableData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Step2_Annotated");
+    XLSX.writeFile(wb, `step2_result_${new Date().getTime()}.xlsx`);
+}
+</script>
+
+</body>
+</html>
