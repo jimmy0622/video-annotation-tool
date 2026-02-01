@@ -8,16 +8,21 @@
         body { font-family: sans-serif; margin: 20px; background-color: #f4f7f6; }
         .container { max-width: 1400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         
+        /* 標註說明樣式 */
         .info-section { margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
         .info-header { background: #607d8b; color: white; padding: 10px 15px; font-weight: bold; }
-        .info-content { padding: 15px; background: #fff; font-size: 0.9em; line-height: 1.6; }
+        .info-content { padding: 15px; background: #fff; font-size: 0.95em; line-height: 1.6; }
+        .definition-box { background-color: #f1f8e9; border-left: 4px solid #4caf50; padding: 10px 15px; margin: 10px 0; }
+        .definition-term { font-weight: bold; color: #2e7d32; text-transform: uppercase; }
 
+        /* 功能表格樣式 */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; overflow: hidden; }
         th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         tr:hover { background-color: #f1f1f1; }
         
+        /* 鎖定列樣式 */
         tr.skip-row { background-color: #eeeeee !important; color: #aaaaaa; }
         
         select { width: 100%; padding: 5px; border-radius: 4px; cursor: pointer; }
@@ -39,14 +44,21 @@
 <body>
 
 <div class="container">
-    <h2>Transcript 標註系統 - Step 2 (Artifact/Process)</h2>
+    <h2>Transcript 標註系統 - Step 2 (Artefact/Process)</h2>
 
     <div class="info-section">
-        <div class="info-header">📌 Step 2 標註說明</div>
+        <div class="info-header">📌 Step 2 標註說明與定義</div>
         <div class="info-content">
             1. 本階段僅需標註 <b>Method, Supplementary, Description, Conclusion</b> 四大類別。<br>
-            2. 標註選項包含：<b>ARTEFACT</b> (物品/工具) 或 <b>PROCESS</b> (過程/動作)。<br>
-            3. 灰色列為非目標類別，已自動鎖定。
+            2. 灰色列為非目標類別，系統已自動鎖定。<br>
+            3. 標註選項包含：<b>ARTEFACT</b> 或 <b>PROCESS</b><br>
+            
+            <div class="definition-box">
+                <span class="definition-term">ARTEFACT :</span> An artefact is one of many kinds of tangible by-products produced during the development of a piece of writing.
+            </div>
+            <div class="definition-box">
+                <span class="definition-term">PROCESS :</span> A process is a series or set of activities that interact to produce a piece of writing.
+            </div>
         </div>
     </div>
     
