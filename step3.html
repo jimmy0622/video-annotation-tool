@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Transcript Annotation Tool - Step 3 (Artifact Focused)</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        /* 繼承 Step 1 & 2 的風格 */
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f7f6; }
+        .container { max-width: 1500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .info-section { margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+        .info-header { background: #607d8b; color: white; padding: 10px 15px; font-weight: bold; }
+        .info-content { padding: 15px; background: #fff; font-size: 0.9em; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; overflow: hidden; }
+        th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        /* 鎖定列樣式 */
+        tr.skip-row { background-color: #eeeeee !important; color: #aaaaaa; }
+        
+        select { width: 100%; padding: 5px; border-radius: 4px; cursor: pointer; }
+        select:disabled { cursor: not-allowed; opacity: 0.6; }
+
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        .btn { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; color: white; font-weight: bold; }
+        .btn-upload { background-color: #2196F3; }
+        .btn-download { background-color: #f44336; }
+        .btn-same { background-color: #ff9800; font-size: 12px; }
+        
+        /* 欄位寬度 */
+        .col-id { width: 40px; }
+        .col-text { width: 30%; }
+        .col-info { width: 100px; font-size: 0.8em; }
+        .col-select { width: 180px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Step 3: Moves and Steps (Artifact-Based)</h2>
+
+    <div class="info-section">
+        <div class="info-header">📌 Step 3 標註說明</div>
+        <div class="info-content">
+            1. 本階段僅針對 Step 2 標註為 <b>ARTEFACT</b> 的列進行標註。<br>
+            2. 其他標註為 PROCESS 的列已自動鎖定，無需操作。<br>
+            3. 標註架構依據 SOP 分析之 Moves 與 Steps。
+        </div>
+    </div>
+    
+    <div class="controls">
+        <input type="file" id="upload" accept=".xlsx, .xls" style="display:none">
+        <button class="btn btn-upload" onclick="document.getElementById('upload').click()">讀取 Step 2 輸出檔案</button>
+        <button class="btn btn-download" onclick="exportToExcel()">匯出 Step 3 結果 (.xlsx)</button>
+        <span id="fileNameDisplay" style="color: #666;">尚未讀取檔案</span>
+    </div>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th class="col-id">ID</th>
+                <th class="col-text">Text</th>
+                <th class="col-info">Step 2 Status</th>
+                <th class="col-select">Move</th>
+                <th class="col-select">Step</th>
+                <th style="width: 70px;">快捷</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+// 根據上傳圖片 Table 3 定義結構
+const moveConfig = {
+    "Introduction": ["Generalization", "Background", "Goals or decision to apply"],
+    "Background": ["General (Family/Travel etc.)", "Work", "Education", "Research", "Personal attributes"],
+    "Reasons for applying": ["Gap in background", "Positive gains (incl. interests)", "Program/university attributes", "Disciplinary and research reasons"],
+    "Extra-curricular information": ["N/A"],
+    "Conclusion": ["Goals and/or prediction of future", "Self evaluation"]
+};
+
+let tableData = [];
+
+document.getElementById('upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('fileNameDisplay').innerText = file.name;
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        tableData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        renderTable();
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    tableData.forEach((row, index) => {
+        // 核心邏輯：僅 ARTEFACT 可標註
+        const isArtifact = row.Artifact_Process === "ARTEFACT";
+        const tr = document.createElement('tr');
+        if (!isArtifact) tr.className = 'skip-row';
+
+        tr.innerHTML = `
+            <td>${row.id || index + 1}</td>
+            <td>${row.text || ''}</td>
+            <td><b style="color: ${isArtifact ? '#2e7d32' : '#999'}">${row.Artifact_Process || '-'}</b></td>
+        `;
+
+        // Move & Step 欄位
+        const tdMove = document.createElement('td');
+        const selectMove = document.createElement('select');
+        const tdStep = document.createElement('td');
+        const selectStep = document.createElement('select');
+        
+        if (!isArtifact) {
+            selectMove.disabled = true;
+            selectStep.disabled = true;
+            selectMove.innerHTML = '<option value="">-</option>';
+            selectStep.innerHTML = '<option value="">-</option>';
+        } else {
+            selectMove.id = `move-${index}`;
+            selectStep.id = `step-${index}`;
+            
+            selectMove.innerHTML = `<option value="">請選擇 Move</option>` + 
+                Object.keys(moveConfig).map(m => `<option value="${m}" ${row.Move === m ? 'selected' : ''}>${m}</option>`).join('');
+
+            const updateStepOptions = (selectedMove, selectedStep = null) => {
+                if (!selectedMove) { selectStep.innerHTML = '<option value="">請選 Move</option>'; return; }
+                let opts = `<option value="">請選擇 Step</option>`;
+                moveConfig[selectedMove].forEach(s => {
+                    opts += `<option value="${s}" ${selectedStep === s ? 'selected' : ''}>${s}</option>`;
+                });
+                selectStep.innerHTML = opts;
+            };
+
+            selectMove.onchange = (e) => {
+                row.Move = e.target.value;
+                row.Step = "";
+                updateStepOptions(e.target.value);
+            };
+
+            selectStep.onchange = (e) => { row.Step = e.target.value; };
+            updateStepOptions(row.Move, row.Step);
+        }
+
+        tdMove.appendChild(selectMove);
+        tdStep.appendChild(selectStep);
+
+        // 同上按鈕
+        const tdAction = document.createElement('td');
+        if (isArtifact && index > 0) {
+            const btn = document.createElement('button');
+            btn.className = "btn btn-same"; btn.innerText = "↑同上";
+            btn.onclick = () => {
+                let prev = null;
+                for(let i = index - 1; i >= 0; i--) {
+                    if(tableData[i].Artifact_Process === "ARTEFACT" && tableData[i].Move) {
+                        prev = tableData[i]; break;
+                    }
+                }
+                if(prev) {
+                    row.Move = prev.Move; row.Step = prev.Step;
+                    selectMove.value = prev.Move;
+                    selectMove.dispatchEvent(new Event('change'));
+                    setTimeout(() => { selectStep.value = prev.Step; }, 5);
+                }
+            };
+            tdAction.appendChild(btn);
+        }
+
+        tr.appendChild(tdMove); tr.appendChild(tdStep); tr.appendChild(tdAction);
+        tbody.appendChild(tr);
+    });
+}
+
+function exportToExcel() {
+    if (tableData.length === 0) return alert("無資料");
+    const ws = XLSX.utils.json_to_sheet(tableData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Step3_Final");
+    XLSX.writeFile(wb, `step3_final_result_${new Date().getTime()}.xlsx`);
+}
+</script>
+</body>
+</html>
