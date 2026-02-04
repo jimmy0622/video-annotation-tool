@@ -100,7 +100,7 @@
                 <th class="col-text">text</th>
                 <th class="col-select">Category</th>
                 <th class="col-select">Type</th>
-                <th class="col-ap">Artifact_Process</th>
+                <th class="col-ap">artefact_Process</th>
                 <th class="col-action">快捷</th>
             </tr>
         </thead>
@@ -199,15 +199,15 @@ function renderTable() {
             if (!isTarget) {
                 selectAP.disabled = true;
                 selectAP.innerHTML = '<option value="">-</option>';
-                row.Artifact_Process = "";
+                row.artefact_Process = "";
                 tr.classList.add('skip-row');
             } else {
                 selectAP.disabled = false;
                 tr.classList.remove('skip-row');
                 selectAP.innerHTML = `
                     <option value="">請選擇</option>
-                    <option value="ARTEFACT" ${row.Artifact_Process === 'ARTEFACT' ? 'selected' : ''}>ARTEFACT</option>
-                    <option value="PROCESS" ${row.Artifact_Process === 'PROCESS' ? 'selected' : ''}>PROCESS</option>
+                    <option value="ARTEFACT" ${row.artefact_Process === 'ARTEFACT' ? 'selected' : ''}>ARTEFACT</option>
+                    <option value="PROCESS" ${row.artefact_Process === 'PROCESS' ? 'selected' : ''}>PROCESS</option>
                 `;
             }
         };
@@ -232,7 +232,7 @@ function renderTable() {
         };
 
         selectType.onchange = (e) => { row.Type = e.target.value; };
-        selectAP.onchange = (e) => { row.Artifact_Process = e.target.value; };
+        selectAP.onchange = (e) => { row.artefact_Process = e.target.value; };
 
         // 初始化狀態 (續標)
         updateTypeOptions(row.Category, row.Type);
@@ -251,7 +251,7 @@ function renderTable() {
                 const prev = tableData[index-1];
                 row.Category = prev.Category;
                 row.Type = prev.Type;
-                row.Artifact_Process = prev.Artifact_Process;
+                row.artefact_Process = prev.artefact_Process;
                 renderTable(); 
             };
             tdAction.appendChild(btnSame);
@@ -268,7 +268,7 @@ function renderTable() {
 function exportToExcel() {
     if (tableData.length === 0) return alert("沒有資料");
     const ws = XLSX.utils.json_to_sheet(tableData, {
-        header: ["id", "start_time", "end_time", "text", "Category", "Type", "Artifact_Process"]
+        header: ["id", "start_time", "end_time", "text", "Category", "Type", "artefact_Process"]
     });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Final_Result");
@@ -277,3 +277,4 @@ function exportToExcel() {
 </script>
 </body>
 </html>
+
