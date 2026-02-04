@@ -2,42 +2,51 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Transcript Annotation Tool - V4</title>
+    <title>Transcript Annotation Tool - V5 (Enhanced Text)</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
-        /* 整體基礎樣式 */
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f7f6; }
-        .container { max-width: 1400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f7f6; color: #000; }
+        .container { max-width: 1600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         
-        /* --- 上方標註指引參考表樣式 --- */
         .guideline-section { margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
         .guideline-header { background: #607d8b; color: white; padding: 10px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; }
-        .guideline-content { padding: 15px; overflow-x: auto; background: #fff; }
-        .ref-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        .guideline-content { padding: 15px; background: #fff; }
+        
+        .ref-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-bottom: 20px; color: #000; }
         .ref-table th, .ref-table td { border: 1px solid #eee; padding: 8px; text-align: left; }
-        .ref-table th { background-color: #f8f9fa; color: #555; }
-        .tag-cat { font-weight: bold; color: #2e7d32; }
-        .tag-type { font-weight: bold; color: #1565c0; }
+        .ref-table th { background-color: #f8f9fa; color: #000; position: sticky; top: 0; }
 
-        /* --- 下方標註功能區樣式 (保留你原始要求的樣式) --- */
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; overflow: hidden; }
-        th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        tr:hover { background-color: #f1f1f1; }
-        select { width: 100%; padding: 5px; border-radius: 4px; cursor: pointer; }
+        .step2-box { background-color: #f1f8e9; border: 1px solid #c5e1a5; padding: 15px; border-radius: 4px; color: #000; }
+        .definition-box { background-color: #ffffff; border-left: 4px solid #4caf50; padding: 10px 15px; margin: 10px 0; font-size: 0.95em; }
+        .definition-term { font-weight: bold; color: #2e7d32; }
+
+        table.main-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; color: #000; }
+        .main-table th, .main-table td { border: 1px solid #ddd; padding: 10px; text-align: left; overflow: hidden; }
+        .main-table th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
+        
+        /* 核心修改：所有資料欄位永遠純白背景，文字純黑 */
+        td.col-clean { background-color: white !important; color: #000 !important; }
+        
+        /* 標註欄位底色交替，文字依然純黑 */
+        tr:nth-child(even) td.col-cat, 
+        tr:nth-child(even) td.col-type, 
+        tr:nth-child(even) td.col-ap { background-color: #f9f9f9; }
+        
+        /* skip-row 僅用於邏輯判定，文字保持純黑 */
+        tr.skip-row td { color: #000 !important; }
+        tr.skip-row select:disabled { cursor: not-allowed; background-color: #f0f0f0; color: #000; opacity: 1; }
+
         .controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
         .btn { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; color: white; font-weight: bold; transition: 0.2s; }
         .btn-upload { background-color: #2196F3; }
         .btn-download { background-color: #f44336; }
         .btn-same { background-color: #ff9800; font-size: 12px; white-space: nowrap; }
         
-        /* 欄位寬度設定 */
-        .col-id { width: 40px; }
-        .col-time { width: 100px; }
-        .col-text { width: 35%; }
-        .col-select { width: 150px; }
-        .col-action { width: 80px; text-align: center; }
+        .col-id { width: 45px; }
+        .col-time { width: 90px; }
+        .col-text { width: 35%; } /* 微調寬度以容納較大字體 */
+        .col-select { width: 140px; }
+        .col-ap { width: 170px; }
     </style>
 </head>
 <body>
@@ -47,22 +56,34 @@
 
     <div class="guideline-section">
         <div class="guideline-header" onclick="toggleGuideline()">
-            <span>📖 標註指引參考表 (Annotation Guidelines)</span>
+            <span>📖 完整說明 (Step 1 Taxonomy & Step 2 Rules)</span>
             <span id="toggleIcon">▼ 收合</span>
         </div>
         <div class="guideline-content" id="guidelineContent">
-            <table class="ref-table">
-                <thead>
-                    <tr>
-                        <th style="width:10%">Category</th>
-                        <th style="width:10%">Type</th>
-                        <th style="width:35%">Definition</th>
-                        <th style="width:45%">Example from Dataset</th>
-                    </tr>
-                </thead>
-                <tbody id="guidelineBody">
-                    </tbody>
-            </table>
+            <p style="font-weight: bold; color: #1565c0;">Step 1: Taxonomy for Video Annotation</p>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; margin-bottom: 20px;">
+                <table class="ref-table">
+                    <thead>
+                        <tr>
+                            <th style="width:15%">Category</th>
+                            <th style="width:15%">Type</th>
+                            <th>Definition according to the Taxonomy</th>
+                        </tr>
+                    </thead>
+                    <tbody id="guidelineBody"></tbody>
+                </table>
+            </div>
+
+            <p style="font-weight: bold; color: #1565c0;">Step 2: Artefact or Process</p>
+            <div class="step2-box">
+                當 STEP1 標註的結果為 Method、Supplementary、Explanation、Description、Conclusion，此欄位才會開啟標註功能
+                <div class="definition-box">
+                    <span class="definition-term">ARTEFACT :</span>
+                </div>
+                <div class="definition-box">
+                    <span class="definition-term">PROCESS :</span>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -70,82 +91,72 @@
         <input type="file" id="upload" accept=".xlsx, .xls" style="display:none">
         <button class="btn btn-upload" onclick="document.getElementById('upload').click()">讀取 Excel 檔案</button>
         <button class="btn btn-download" onclick="exportToExcel()">匯出標註結果 (.xlsx)</button>
-        <span id="fileNameDisplay" style="color: #666;">尚未讀取檔案</span>
+        <span id="fileNameDisplay" style="color: #000;">尚未讀取檔案</span>
     </div>
 
-    <table id="dataTable">
+    <table class="main-table" id="dataTable">
         <thead>
             <tr>
-                <th class="col-id">ID</th>
-                <th class="col-time">Start</th>
-                <th class="col-time">End</th>
-                <th class="col-text">Text</th>
+                <th class="col-id">id</th>
+                <th class="col-time">start_time</th>
+                <th class="col-time">end_time</th>
+                <th class="col-text">text</th>
                 <th class="col-select">Category</th>
                 <th class="col-select">Type</th>
+                <th class="col-ap">Artifact_Process</th>
                 <th class="col-action">快捷</th>
             </tr>
         </thead>
-        <tbody id="tableBody">
-            </tbody>
+        <tbody id="tableBody"></tbody>
     </table>
 </div>
 
 <script>
-// 1. 完整的指引資料配置
 const fullConfigData = [
-    { cat: "Greeting", type: "Opening", def: "Starting remarks and instructor/channel introductions", ex: "\"Hey, what's up you guys, Chef [...] here.\"" },
-    { cat: "Greeting", type: "Closing", def: "Parting remarks and wrap-up", ex: "\"Stay tuned, we'll catch you all later.\"" },
-    { cat: "Overview", type: "Goal", def: "Main purpose of the video and its descriptions", ex: "\"Today, I'll show you a special technique...\"" },
-    { cat: "Overview", type: "Motivation", def: "Reasons or background information", ex: "\"[...] Someone is making a very special valentine's day meal...\"" },
-    { cat: "Overview", type: "Briefing", def: "Rundown of how the goal will be achieved", ex: "\"I'm pretty sure that just taking a pencil...\"" },
-    { cat: "Method", type: "Subgoal", def: "Objective of a subsection", ex: "\"Now for the intricate layer...\"" },
-    { cat: "Method", type: "Instruction", def: "Actions performed to complete the task", ex: "\"We're going to pour that into our silicone baking cups.\"" },
-    { cat: "Method", type: "Tool", def: "Materials, ingredients, and equipment", ex: "\"I'm also going to use a pair of scissors...\"" },
-    { cat: "Supplementary", type: "Tip", def: "Additional info to make instruction efficient", ex: "\"I find that it's easier to do just a couple of layers...\"" },
-    { cat: "Supplementary", type: "Warning", def: "Actions that should be avoided", ex: "\"I don't know but I would say avoid using bleach...\"" },
-    { cat: "Explanation", type: "Justification", def: "Reasons why the instruction was performed", ex: "\"Because every time we wear our contact lenses...\"" },
-    { cat: "Explanation", type: "Effect", def: "Consequences of the instruction", ex: "\"And these will overhang a little to help hide the gap.\"" },
-    { cat: "Description", type: "Status", def: "Current state of the target object", ex: "\"Something sticky and dirty all through the back seat.\"" },
-    { cat: "Description", type: "Context", def: "Descriptions of the method or setting", ex: "\"[...] The process of putting on a tip by hand...\"" },
-    { cat: "Description", type: "Tool Specification", def: "Descriptions of the tools", ex: "\"These are awesome beans, creamy texture...\"" },
-    { cat: "Conclusion", type: "Outcome", def: "Final results of the procedure", ex: "\"And now we have a dinosaur taggy blanket...\"" },
-    { cat: "Conclusion", type: "Reflection", def: "Summary/Suggestions for the future", ex: "\"However, I am still concerned about how safe...\"" },
-    { cat: "Miscellaneous", type: "Side Note", def: "Personal stories, jokes, ads", ex: "\"Tristan is back from basketball...\"" },
-    { cat: "Miscellaneous", type: "Self-promotion", def: "Likes, sub, donations", ex: "\"So if you like this video, please give it a thumbs up...\"" },
-    { cat: "Miscellaneous", type: "Bridge", def: "Phrases that connect different sections", ex: "\"And we're going to go ahead and get started.\"" },
-    { cat: "Miscellaneous", type: "Filler", def: "Conventional filler words", ex: "\"Whoops.\"" }
+    { cat: "Greeting", type: "Opening", def: "Starting remarks and instructor/channel introductions" },
+    { cat: "Greeting", type: "Closing", def: "Parting remarks and wrap-up." },
+    { cat: "Overview", type: "Goal", def: "Main purpose of the video and its descriptions" },
+    { cat: "Overview", type: "Motivation", def: "Reasons or background information on why the video was created" },
+    { cat: "Overview", type: "Briefing", def: "Rundown of how the goal will be achieved" },
+    { cat: "Method", type: "Subgoal", def: "Objective of a subsection" },
+    { cat: "Method", type: "Instruction", def: "Actions that the instructor performs to complete the task" },
+    { cat: "Method", type: "Tool", def: "Introduction of materials, software, or equipment used." },
+    { cat: "Supplementary", type: "Tip", def: "Additional instructions or information that makes instructions easier, faster, or more efficient" },
+    { cat: "Supplementary", type: "Warning", def: "Actions that should be avoided." },
+    { cat: "Explanation", type: "Justification", def: "Reasons why the instruction was performed" },
+    { cat: "Explanation", type: "Effect", def: "Consequences of the instruction" },
+    { cat: "Description", type: "Status", def: "Descriptions of the current state of the target object" },
+    { cat: "Description", type: "Context", def: "Descriptions of the method or the setting" },
+    { cat: "Description", type: "Tool Specification", def: "Descriptions of the tools and equipment" },
+    { cat: "Conclusion", type: "Outcome", def: "Descriptions of the final results of the procedure" },
+    { cat: "Conclusion", type: "Reflection", def: "Summary, evaluation, and suggestions for the future about the overall procedure" },
+    { cat: "Miscellaneous", type: "Side Note", def: "Personal stories, jokes, user engagement, and advertisements" },
+    { cat: "Miscellaneous", type: "Self-promotion", def: "Promotion of the instructor of the channel (i.e. likes, subscription, notification, or donations)" },
+    { cat: "Miscellaneous", type: "Bridge", def: "Meaningless phrases or expressions that connect different sections" },
+    { cat: "Miscellaneous", type: "Filler", def: "Conventional filler words" }
 ];
 
-// 轉化為下拉選單用的 Config 格式
+const targetCategories = ["Method", "Supplementary", "Explanation", "Description", "Conclusion"];
 const config = {};
 fullConfigData.forEach(item => {
     if(!config[item.cat]) config[item.cat] = {};
     config[item.cat][item.type] = item.def;
 });
 
-// 初始化指引表格 (由 JS 生成以保持 HTML 乾淨)
 const gBody = document.getElementById('guidelineBody');
 fullConfigData.forEach(item => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="tag-cat">${item.cat}</td><td class="tag-type">${item.type}</td><td>${item.def}</td><td style="color:#666; font-style:italic">${item.ex}</td>`;
+    tr.innerHTML = `<td><b style="color:#000">${item.cat}</b></td><td style="color:#000">${item.type}</td><td style="color:#000">${item.def}</td>`;
     gBody.appendChild(tr);
 });
 
 function toggleGuideline() {
     const content = document.getElementById('guidelineContent');
-    const icon = document.getElementById('toggleIcon');
-    if (content.style.display === "none") {
-        content.style.display = "block";
-        icon.innerText = "▼ 收合";
-    } else {
-        content.style.display = "none";
-        icon.innerText = "▲ 展開參考表";
-    }
+    content.style.display = (content.style.display === "none") ? "block" : "none";
 }
 
 let tableData = [];
 
-// 處理檔案上傳
 document.getElementById('upload').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -160,30 +171,50 @@ document.getElementById('upload').addEventListener('change', function(e) {
     reader.readAsArrayBuffer(file);
 });
 
-// 渲染標註表格
 function renderTable() {
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
 
     tableData.forEach((row, index) => {
         const tr = document.createElement('tr');
+        tr.id = `row-${index}`;
+        
+        // 修改：text 欄位字體加大 (font-size: 1.15em)
         tr.innerHTML = `
-            <td>${row.id || index + 1}</td>
-            <td>${row.start_time || ''}</td>
-            <td>${row.end_time || ''}</td>
-            <td>${row.text || ''}</td>
+            <td class="col-clean">${row.id || index + 1}</td>
+            <td class="col-clean">${row.start_time || ''}</td>
+            <td class="col-clean">${row.end_time || ''}</td>
+            <td class="col-clean" style="font-size:1em; font-weight:500;">${row.text || ''}</td>
         `;
 
-        const tdCat = document.createElement('td');
+        const tdCat = document.createElement('td'); tdCat.className = 'col-cat';
         const selectCat = document.createElement('select');
-        selectCat.id = `cat-${index}`;
         selectCat.innerHTML = `<option value="">請選擇</option>` + 
             Object.keys(config).map(cat => `<option value="${cat}" ${row.Category === cat ? 'selected' : ''}>${cat}</option>`).join('');
         
-        const tdType = document.createElement('td');
+        const tdType = document.createElement('td'); tdType.className = 'col-type';
         const selectType = document.createElement('select');
-        selectType.id = `type-${index}`;
-        
+        const tdAP = document.createElement('td'); tdAP.className = 'col-ap';
+        const selectAP = document.createElement('select');
+
+        const updateAPStatus = (selectedCat) => {
+            const isTarget = targetCategories.includes(selectedCat);
+            if (!isTarget) {
+                selectAP.disabled = true;
+                selectAP.innerHTML = '<option value="">-</option>';
+                row.Artifact_Process = "";
+                tr.classList.add('skip-row');
+            } else {
+                selectAP.disabled = false;
+                tr.classList.remove('skip-row');
+                selectAP.innerHTML = `
+                    <option value="">請選擇</option>
+                    <option value="ARTEFACT" ${row.Artifact_Process === 'ARTEFACT' ? 'selected' : ''}>ARTEFACT</option>
+                    <option value="PROCESS" ${row.Artifact_Process === 'PROCESS' ? 'selected' : ''}>PROCESS</option>
+                `;
+            }
+        };
+
         const updateTypeOptions = (selectedCat, selectedType = null) => {
             if (!selectedCat || !config[selectedCat]) {
                 selectType.innerHTML = '<option value="">-</option>';
@@ -200,58 +231,52 @@ function renderTable() {
             row.Category = e.target.value;
             row.Type = "";
             updateTypeOptions(e.target.value);
+            updateAPStatus(e.target.value);
         };
 
-        selectType.onchange = (e) => {
-            row.Type = e.target.value;
-        };
+        selectType.onchange = (e) => { row.Type = e.target.value; };
+        selectAP.onchange = (e) => { row.Artifact_Process = e.target.value; };
 
+        // 初始化狀態 (續標)
         updateTypeOptions(row.Category, row.Type);
+        updateAPStatus(row.Category);
+
         tdCat.appendChild(selectCat);
         tdType.appendChild(selectType);
+        tdAP.appendChild(selectAP);
 
         const tdAction = document.createElement('td');
         if (index > 0) {
             const btnSame = document.createElement('button');
             btnSame.className = "btn btn-same";
             btnSame.innerText = "↑ 同上";
-            btnSame.onclick = () => copyFromAbove(index);
+            btnSame.onclick = () => {
+                const prev = tableData[index-1];
+                row.Category = prev.Category;
+                row.Type = prev.Type;
+                row.Artifact_Process = prev.Artifact_Process;
+                renderTable(); 
+            };
             tdAction.appendChild(btnSame);
         }
 
         tr.appendChild(tdCat);
         tr.appendChild(tdType);
+        tr.appendChild(tdAP);
         tr.appendChild(tdAction);
         tbody.appendChild(tr);
     });
 }
 
-function copyFromAbove(index) {
-    if (index === 0) return;
-    const prevRow = tableData[index - 1];
-    tableData[index].Category = prevRow.Category;
-    tableData[index].Type = prevRow.Type;
-
-    const selectCat = document.getElementById(`cat-${index}`);
-    const selectType = document.getElementById(`type-${index}`);
-    
-    selectCat.value = prevRow.Category || "";
-    selectCat.dispatchEvent(new Event('change')); 
-    
-    setTimeout(() => {
-        selectType.value = prevRow.Type || "";
-        tableData[index].Type = prevRow.Type;
-    }, 5);
-}
-
 function exportToExcel() {
     if (tableData.length === 0) return alert("沒有資料");
-    const ws = XLSX.utils.json_to_sheet(tableData);
+    const ws = XLSX.utils.json_to_sheet(tableData, {
+        header: ["id", "start_time", "end_time", "text", "Category", "Type", "Artifact_Process"]
+    });
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Annotated");
+    XLSX.utils.book_append_sheet(wb, ws, "Final_Result");
     XLSX.writeFile(wb, `annotated_${new Date().getTime()}.xlsx`);
 }
 </script>
-
 </body>
 </html>
