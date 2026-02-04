@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Transcript Annotation Tool - V5 (Enhanced Text)</title>
+    <title>Transcript Annotation Tool - V5 (High Contrast)</title>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: sans-serif; margin: 20px; background-color: #f4f7f6; color: #000; }
@@ -24,15 +24,12 @@
         .main-table th, .main-table td { border: 1px solid #ddd; padding: 10px; text-align: left; overflow: hidden; }
         .main-table th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
         
-        /* 核心修改：所有資料欄位永遠純白背景，文字純黑 */
-        td.col-clean { background-color: white !important; color: #000 !important; }
+        /* 核心修改：所有欄位實施一灰一白底色相間 */
+        tr:nth-child(even) td { background-color: #f9f9f9 !important; }
+        tr:nth-child(odd) td { background-color: #ffffff !important; }
         
-        /* 標註欄位底色交替，文字依然純黑 */
-        tr:nth-child(even) td.col-cat, 
-        tr:nth-child(even) td.col-type, 
-        tr:nth-child(even) td.col-ap { background-color: #f9f9f9; }
-        
-        /* skip-row 僅用於邏輯判定，文字保持純黑 */
+        /* 確保文字與選單在高對比下的清晰度 */
+        td { color: #000 !important; }
         tr.skip-row td { color: #000 !important; }
         tr.skip-row select:disabled { cursor: not-allowed; background-color: #f0f0f0; color: #000; opacity: 1; }
 
@@ -44,7 +41,7 @@
         
         .col-id { width: 45px; }
         .col-time { width: 90px; }
-        .col-text { width: 35%; } /* 微調寬度以容納較大字體 */
+        .col-text { width: 35%; } 
         .col-select { width: 140px; }
         .col-ap { width: 170px; }
     </style>
@@ -94,7 +91,7 @@
         <span id="fileNameDisplay" style="color: #000;">尚未讀取檔案</span>
     </div>
 
-    <table class="main-table" id="dataTable">
+    <table id="dataTable" class="main-table">
         <thead>
             <tr>
                 <th class="col-id">id</th>
@@ -103,7 +100,7 @@
                 <th class="col-text">text</th>
                 <th class="col-select">Category</th>
                 <th class="col-select">Type</th>
-                <th class="col-ap">Artefact_Process</th>
+                <th class="col-ap">Artifact_Process</th>
                 <th class="col-action">快捷</th>
             </tr>
         </thead>
@@ -179,22 +176,22 @@ function renderTable() {
         const tr = document.createElement('tr');
         tr.id = `row-${index}`;
         
-        // 修改：text 欄位字體加大 (font-size: 1.15em)
+        // 修改：渲染基本資料列
         tr.innerHTML = `
-            <td class="col-clean">${row.id || index + 1}</td>
-            <td class="col-clean">${row.start_time || ''}</td>
-            <td class="col-clean">${row.end_time || ''}</td>
-            <td class="col-clean" style="font-size:1em; font-weight:500;">${row.text || ''}</td>
+            <td>${row.id || index + 1}</td>
+            <td>${row.start_time || ''}</td>
+            <td>${row.end_time || ''}</td>
+            <td style="font-size:1em; font-weight:500;">${row.text || ''}</td>
         `;
 
-        const tdCat = document.createElement('td'); tdCat.className = 'col-cat';
+        const tdCat = document.createElement('td'); 
         const selectCat = document.createElement('select');
         selectCat.innerHTML = `<option value="">請選擇</option>` + 
             Object.keys(config).map(cat => `<option value="${cat}" ${row.Category === cat ? 'selected' : ''}>${cat}</option>`).join('');
         
-        const tdType = document.createElement('td'); tdType.className = 'col-type';
+        const tdType = document.createElement('td'); 
         const selectType = document.createElement('select');
-        const tdAP = document.createElement('td'); tdAP.className = 'col-ap';
+        const tdAP = document.createElement('td'); 
         const selectAP = document.createElement('select');
 
         const updateAPStatus = (selectedCat) => {
@@ -280,4 +277,3 @@ function exportToExcel() {
 </script>
 </body>
 </html>
-
