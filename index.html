@@ -24,13 +24,22 @@
         .main-table th, .main-table td { border: 1px solid #ddd; padding: 10px; text-align: left; overflow: hidden; }
         .main-table th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
         
-        /* 核心修改：所有欄位實施一灰一白底色相間 */
         tr:nth-child(even) td { background-color: #f9f9f9 !important; }
         tr:nth-child(odd) td { background-color: #ffffff !important; }
         
-        /* 確保文字與選單在高對比下的清晰度 */
         td { color: #000 !important; }
         tr.skip-row td { color: #000 !important; }
+        
+        /* 放大選單框框與文字 */
+        select { 
+            width: 100%; 
+            padding: 8px 5px; 
+            font-size: 15px; 
+            border-radius: 4px; 
+            border: 1px solid #bbb;
+            box-sizing: border-box;
+        }
+
         tr.skip-row select:disabled { cursor: not-allowed; background-color: #f0f0f0; color: #000; opacity: 1; }
 
         .controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
@@ -41,8 +50,8 @@
         
         .col-id { width: 45px; }
         .col-time { width: 90px; }
-        .col-text { width: 35%; } 
-        .col-select { width: 140px; }
+        .col-text { width: 30%; } 
+        .col-select { width: 160px; } /* 微調欄位寬度以容納大框框 */
         .col-ap { width: 170px; }
     </style>
 </head>
@@ -180,7 +189,7 @@ function renderTable() {
             <td>${row.id || index + 1}</td>
             <td>${row.start_time || ''}</td>
             <td>${row.end_time || ''}</td>
-            <td style="font-size:1em; font-weight:500;">${row.text || ''}</td>
+            <td style="font-size:1em; font-weight:400;">${row.text || ''}</td>
         `;
 
         const tdCat = document.createElement('td'); 
@@ -233,7 +242,6 @@ function renderTable() {
         selectType.onchange = (e) => { row.Type = e.target.value; };
         selectAP.onchange = (e) => { row.artefact_process = e.target.value; };
 
-        // 初始化狀態 (續標)
         updateTypeOptions(row.Category, row.Type);
         updateAPStatus(row.Category);
 
@@ -276,4 +284,3 @@ function exportToExcel() {
 </script>
 </body>
 </html>
-
