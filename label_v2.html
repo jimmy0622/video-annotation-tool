@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Transcript Annotation Tool - Professional Dual Integrated</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f7f6; color: #000; }
+        .container { max-width: 1850px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .guideline-section { margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+        .guideline-header { background: #607d8b; color: white; padding: 10px 15px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; }
+        .guideline-content { padding: 15px; background: #fff; display: none; }
+        
+        .ref-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-bottom: 20px; color: #000; }
+        .ref-table th, .ref-table td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        .ref-table th { background-color: #f8f9fa; color: #000; position: sticky; top: 0; }
+
+        .step2-box { background-color: #f1f8e9; border: 1px solid #c5e1a5; padding: 15px; border-radius: 4px; color: #000; margin-bottom: 20px; }
+        .definition-box { background-color: #ffffff; border-left: 4px solid #4caf50; padding: 10px 15px; margin: 10px 0; font-size: 0.95em; }
+        .definition-term { font-weight: bold; color: #2e7d32; }
+
+        table.main-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; color: #000; }
+        .main-table th, .main-table td { border: 1px solid #ddd; padding: 10px; text-align: left; overflow: hidden; }
+        .main-table th { background-color: #4CAF50; color: white; position: sticky; top: 0; z-index: 10; }
+        
+        tr:nth-child(even) td { background-color: #f9f9f9 !important; }
+        tr:nth-child(odd) td { background-color: #ffffff !important; }
+        
+        select { 
+            width: 100%; padding: 8px 5px; font-size: 15px; border-radius: 4px; border: 1px solid #bbb; box-sizing: border-box; color: #000;
+        }
+
+        .specific-group { display: flex; gap: 8px; background: #e3f2fd; padding: 6px; border-radius: 4px; border: 1px solid #bbdefb; }
+        .move-step-pair { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        .btn { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; color: white; font-weight: bold; transition: 0.2s; }
+        .btn-upload { background-color: #2196F3; }
+        .btn-download { background-color: #f44336; }
+        
+        .col-id { width: 45px; }
+        .col-text { width: 22%; } 
+        .col-select { width: 160px; }
+        .col-artproc { width: 170px; }
+        .col-dynamic { width: 400px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Transcript 標註系統</h2>
+
+    <div class="guideline-section">
+        <div class="guideline-header" onclick="toggleGuideline()">
+            <span>📖 完整說明</span>
+            <span id="toggleIcon">▼ 展開參考表</span>
+        </div>
+        <div class="guideline-content" id="guidelineContent">
+            <p style="font-weight: bold; color: #1565c0;">Step 1: Taxonomy for Video Annotation</p>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; margin-bottom: 20px;">
+                <table class="ref-table">
+                    <thead>
+                        <tr>
+                            <th style="width:15%">Category</th>
+                            <th style="width:15%">Type</th>
+                            <th>Definition according to the Taxonomy</th>
+                        </tr>
+                    </thead>
+                    <tbody id="guidelineBody"></tbody>
+                </table>
+            </div>
+
+            <p style="font-weight: bold; color: #1565c0;">Step 2: Artefact or Process Rules</p>
+            <div class="step2-box">
+                決定step3內容
+                <div class="definition-box">
+                    <span class="definition-term">artefact(specific) :</span> 開啟 Step 3 的 Move & Step 選單進行標註
+                </div>
+                <div class="definition-box">
+                    <span class="definition-term">artefact(general) :</span> 僅開啟文字輸入框，不需選取 Move/Step
+                </div>
+                <div class="definition-box">
+                    <span class="definition-term">process :</span> 不開放細節填寫
+                </div>
+            </div>
+
+            <p style="font-weight: bold; color: #1565c0;">Step 3: Rhetorical Move & Step (Dynamic Details)</p>
+            <div style="max-height: 450px; overflow-y: auto; border: 1px solid #eee; margin-bottom: 20px;">
+                <table class="ref-table">
+                    <thead>
+                        <tr>
+                            <th style="width:20%">Rhetorical Move</th>
+                            <th style="width:20%">Step</th>
+                            <th>Definition according to the Paper</th>
+                        </tr>
+                    </thead>
+                    <tbody id="moveGuidelineBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <input type="file" id="upload" accept=".xlsx, .xls" style="display:none">
+        <button class="btn btn-upload" onclick="document.getElementById('upload').click()">讀取 Excel 檔案</button>
+        <button class="btn btn-download" onclick="exportToExcel()">匯出標註結果 (.xlsx)</button>
+        <span id="fileNameDisplay" style="color: #000;">尚未讀取檔案</span>
+    </div>
+
+    <table id="dataTable" class="main-table">
+        <thead>
+            <tr>
+                <th class="col-id">id</th>
+                <th class="col-text">text</th>
+                <th class="col-select">Category</th>
+                <th class="col-select">Type</th>
+                <th class="col-artproc">Artefact/Process</th>
+                <th class="col-dynamic">(Move/Step or Text)</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+// 1. Video Taxonomy (Step 1)
+const fullConfigData = [
+    { cat: "Greeting", type: "Opening", def: "Starting remarks and instructor/channel introductions" },
+    { cat: "Greeting", type: "Closing", def: "Parting remarks and wrap-up." },
+    { cat: "Overview", type: "Goal", def: "Main purpose of the video and its descriptions" },
+    { cat: "Overview", type: "Motivation", def: "Reasons or background information on why the video was created" },
+    { cat: "Overview", type: "Briefing", def: "Rundown of how the goal will be achieved" },
+    { cat: "Method", type: "Subgoal", def: "Objective of a subsection" },
+    { cat: "Method", type: "Instruction", def: "Actions that the instructor performs to complete the task" },
+    { cat: "Method", type: "Tool", def: "Introduction of materials, software, or equipment used." },
+    { cat: "Supplementary", type: "Tip", def: "Additional instructions or information that makes instructions easier, faster, or more efficient" },
+    { cat: "Supplementary", type: "Warning", def: "Actions that should be avoided." },
+    { cat: "Explanation", type: "Justification", def: "Reasons why the instruction was performed" },
+    { cat: "Explanation", type: "Effect", def: "Consequences of the instruction" },
+    { cat: "Description", type: "Status", def: "Descriptions of the current state of the target object" },
+    { cat: "Description", type: "Context", def: "Descriptions of the method or the setting" },
+    { cat: "Description", type: "Tool Specification", def: "Descriptions of the tools and equipment" },
+    { cat: "Conclusion", type: "Outcome", def: "Descriptions of the final results of the procedure" },
+    { cat: "Conclusion", type: "Reflection", def: "Summary, evaluation, and suggestions for the future" },
+    { cat: "Miscellaneous", type: "Side Note", def: "Personal stories, jokes, user engagement" },
+    { cat: "Miscellaneous", type: "Self-promotion", def: "Promotion of the channel" },
+    { cat: "Miscellaneous", type: "Bridge", def: "Phrases that connect different sections" },
+    { cat: "Miscellaneous", type: "Filler", def: "Conventional filler words" }
+];
+
+// 2. Rhetorical Moves 完整資料 (Step 3)
+const rhetoricalFullData = [
+    { move: "Introduction", step: "Generalization", def: "Making generalizations about life or the profession or discipline." },
+    { move: "Introduction", step: "Background", def: "Providing a synopsis about the applicant's personal background." },
+    { move: "Introduction", step: "Goals or decision to apply", def: "A statement about the decision to apply and/or the applicant's goals in doing so." },
+    { move: "Background", step: "General (Family/Travel)", def: "Presenting general information about his/her background pertaining to travel or family." },
+    { move: "Background", step: "Work", def: "Portraying a \"relevant self\" through discussion of previous work experience and its value to the program." },
+    { move: "Background", step: "Education", def: "Discussing highlights of undergraduate education and foregrounding training that makes them attractive candidates." },
+    { move: "Background", step: "Research", def: "Discussing research experience, often from the final year project or seminars based on research." },
+    { move: "Background", step: "Personal attributes", def: "Stating attributes that applicants believe make them attractive to the program, such as creativity or leadership." },
+    { move: "Reasons for applying", step: "Gap in background", def: "Arriving at a gap in knowledge or experience (often after discussing work) that motivates the pursuit of the degree." },
+    { move: "Reasons for applying", step: "Positive gain", def: "Describing the gains from pursuing the degree or expressing general interest in specific technical areas." },
+    { move: "Reasons for applying", step: "Program/university attributes", def: "Specifying appealing features such as faculty research, course offerings, specializations, or local industry ties." },
+    { move: "Reasons for applying", step: "Disciplinary and research reasons", def: "Expressing reasons in terms of the discipline's progress, its contribution to the world, or the research one intends to engage in." },
+    { move: "Extra-curricular Info", step: "Extra-curricular information", def: "Providing details about sports, music, or community service to show the applicant as a \"well-rounded person\"." },
+    { move: "Conclusion", step: "Goals and/or prediction of future", def: "A restatement of short and long term goals, sometimes intertwined with a hopeful prediction for success." },
+    { move: "Conclusion", step: "Self evaluation", def: "A final attempt to \"sell\" oneself by summing up all the attributes needed to convince the reader." }
+];
+
+// 動態詳情選單對照結構
+const rhetoricalMoves = {};
+rhetoricalFullData.forEach(item => {
+    if(!rhetoricalMoves[item.move]) rhetoricalMoves[item.move] = [];
+    rhetoricalMoves[item.move].push(item.step);
+});
+
+// 決定否開啟step3的分類名單
+const targetCategories = ["Method", "Supplementary", "Explanation", "Description", "Conclusion"];
+
+// 初始化指南表格 (Step 1 - 加入合併邏輯)
+const gBody = document.getElementById('guidelineBody');
+let currentCat = "";
+fullConfigData.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    let catTd = "";
+    if (item.cat !== currentCat) {
+        currentCat = item.cat;
+        const rowspan = fullConfigData.filter(x => x.cat === currentCat).length;
+        catTd = `<td rowspan="${rowspan}"><b>${item.cat}</b></td>`;
+    }
+    tr.innerHTML = `${catTd}<td>${item.type}</td><td>${item.def}</td>`;
+    gBody.appendChild(tr);
+});
+
+// 初始化指南表格 (Step 3 - 已合併儲存格)
+const mBody = document.getElementById('moveGuidelineBody');
+let currentMove = "";
+rhetoricalFullData.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    let moveTd = "";
+    if (item.move !== currentMove) {
+        currentMove = item.move;
+        const rowspan = rhetoricalFullData.filter(x => x.move === currentMove).length;
+        moveTd = `<td rowspan="${rowspan}"><b>${item.move}</b></td>`;
+    }
+    tr.innerHTML = `${moveTd}<td>${item.step}</td><td>${item.def}</td>`;
+    mBody.appendChild(tr);
+});
+
+function toggleGuideline() {
+    const content = document.getElementById('guidelineContent');
+    const isHidden = content.style.display === "none" || content.style.display === "";
+    content.style.display = isHidden ? "block" : "none";
+    document.getElementById('toggleIcon').innerText = isHidden ? "▼ 收合" : "▲ 展開參考表";
+}
+
+let tableData = [];
+
+document.getElementById('upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('fileNameDisplay').innerText = file.name;
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        tableData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        renderTable();
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    const categoryMap = {};
+    fullConfigData.forEach(item => {
+        if(!categoryMap[item.cat]) categoryMap[item.cat] = [];
+        categoryMap[item.cat].push(item.type);
+    });
+
+    tableData.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${index + 1}</td><td>${row.text || ''}</td>`;
+
+        const isTarget = targetCategories.includes(row.Category);
+
+        // Video Category & Type
+        const tdCat = document.createElement('td');
+        const selectCat = document.createElement('select');
+        selectCat.innerHTML = '<option value="">請選擇</option>' + Object.keys(categoryMap).map(c => `<option value="${c}" ${row.Category === c ? 'selected' : ''}>${c}</option>`).join('');
+        
+        const tdType = document.createElement('td');
+        const selectType = document.createElement('select');
+        const updateType = () => {
+            const types = categoryMap[row.Category] || [];
+            selectType.innerHTML = '<option value="">請選擇</option>' + types.map(t => `<option value="${t}" ${row.Type === t ? 'selected' : ''}>${t}</option>`).join('');
+        };
+
+        selectCat.onchange = (e) => { 
+            row.Category = e.target.value; 
+            row.Type = ""; 
+            if (!targetCategories.includes(row.Category)) {
+                row.artefact_process = "";
+                row.Move1 = row.Step1 = row.Move2 = row.Step2 = row.artefact_text = "";
+            }
+            updateType(); 
+            renderTable();
+        };
+
+        selectType.onchange = (e) => { row.Type = e.target.value; };
+        updateType();
+        tdCat.appendChild(selectCat);
+        tdType.appendChild(selectType);
+
+        // Art/Proc 主控
+        const tdArtProc = document.createElement('td');
+        const selectArtProc = document.createElement('select');
+        selectArtProc.disabled = !isTarget;
+        selectArtProc.innerHTML = isTarget ? ('<option value="">請選擇</option>' + 
+            ["artefact(specific)", "artefact(general)", "process"].map(opt => `<option value="${opt}" ${row.artefact_process === opt ? 'selected' : ''}>${opt}</option>`).join('')) : '<option value="">-</option>';
+        
+        selectArtProc.onchange = (e) => {
+            row.artefact_process = e.target.value;
+            row.Move1 = row.Step1 = row.Move2 = row.Step2 = row.artefact_text = "";
+            renderTable();
+        };
+        tdArtProc.appendChild(selectArtProc);
+
+        // 動態詳情區 (Step 3)
+        const tdDynamic = document.createElement('td');
+        const container = document.createElement('div');
+
+        if (!isTarget) {
+            container.innerHTML = '<span style="color:#ccc">不需標註</span>';
+        } else if (row.artefact_process === 'artefact(specific)') {
+            const group = document.createElement('div');
+            group.className = 'specific-group';
+            group.appendChild(createPair(row, 1));
+            group.appendChild(createPair(row, 2));
+            container.appendChild(group);
+        } else if (row.artefact_process === 'artefact(general)') {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = '描述物件內容...';
+            input.value = row.artefact_text || '';
+            input.oninput = (e) => { row.artefact_text = e.target.value; };
+            container.appendChild(input);
+        } else {
+            container.innerHTML = '<span style="color:#999">-</span>';
+        }
+        tdDynamic.appendChild(container);
+
+        tr.append(tdCat, tdType, tdArtProc, tdDynamic);
+        tbody.appendChild(tr);
+    });
+}
+
+function createPair(row, num) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'move-step-pair';
+    const selMove = document.createElement('select');
+    selMove.innerHTML = `<option value="">Move ${num}</option>` + Object.keys(rhetoricalMoves).map(m => `<option value="${m}" ${row['Move'+num] === m ? 'selected' : ''}>${m}</option>`).join('');
+    
+    const selStep = document.createElement('select');
+    const updateSteps = () => {
+        const steps = rhetoricalMoves[row['Move'+num]] || [];
+        selStep.innerHTML = `<option value="">Step ${num}</option>` + steps.map(s => `<option value="${s}" ${row['Step'+num] === s ? 'selected' : ''}>${s}</option>`).join('');
+    };
+    selMove.onchange = (e) => { row['Move'+num] = e.target.value; row['Step'+num] = ""; updateSteps(); };
+    selStep.onchange = (e) => { row['Step'+num] = e.target.value; };
+    updateSteps();
+    wrapper.append(selMove, selStep);
+    return wrapper;
+}
+
+function exportToExcel() {
+    if (tableData.length === 0) return alert("無資料");
+    const headerOrder = ["id", "text", "Category", "Type", "artefact_process", "artefact_text", "start_time", "end_time", "Move1", "Step1", "Move2", "Step2"];
+    const ws = XLSX.utils.json_to_sheet(tableData, { header: headerOrder });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Result");
+    XLSX.writeFile(wb, `annotated_${new Date().getTime()}.xlsx`);
+}
+</script>
+</body>
+</html>
