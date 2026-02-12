@@ -73,7 +73,7 @@
 
             <p style="font-weight: bold; color: #1565c0;">Step 2: Artefact or Process Rules</p>
             <div class="step2-box">
-                決定step3內容
+                此步驟僅標註屬於Method、 Supplementary、 Explanation、 Description、 Conclusion
                 <div class="definition-box">
                     <span class="definition-term">artefact(specific) :</span> 開啟 Step 3 的 Move & Step 選單進行標註
                 </div>
@@ -304,7 +304,7 @@ function renderTable() {
         } else if (row.artefact_process === 'artefact(general)') {
             const input = document.createElement('input');
             input.type = 'text';
-            input.placeholder = '描述物件內容...';
+            input.placeholder = '描述內容...';
             input.value = row.artefact_text || '';
             input.oninput = (e) => { row.artefact_text = e.target.value; };
             container.appendChild(input);
@@ -348,3 +348,4 @@ function exportToExcel() {
 </body>
 
 </html>
+
